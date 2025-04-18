@@ -3,17 +3,213 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Create Your Link</title>
-  <link rel="stylesheet" href="style.css" />
+  <title>Persona Game Experience</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #0f172a, #1e3a8a);
+      color: #fff;
+      overflow-x: hidden;
+    }
+    .container {
+      max-width: 600px;
+      margin: auto;
+      padding: 30px 20px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(10px);
+    }
+    h1, h2 {
+      text-align: center;
+      color: #e0e7ff;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      margin-top: 15px;
+      font-size: 16px;
+    }
+    button {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 12px;
+      background: #6366f1;
+      color: white;
+      font-size: 18px;
+      margin-top: 20px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+    button:hover {
+      background: #818cf8;
+    }
+    .hidden {
+      display: none;
+    }
+    .question-area {
+      animation: fadeSlide 0.6s ease-in-out forwards;
+      margin-bottom: 20px;
+    }
+    @keyframes fadeSlide {
+      0% { opacity: 0; transform: translateY(20px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+    .emoji {
+      font-size: 1.5em;
+      margin-right: 5px;
+    }
+    .animated-text {
+      animation: blink 1s infinite alternate;
+    }
+    @keyframes blink {
+      from { opacity: 0.6; }
+      to { opacity: 1; }
+    }
+    @media (max-width: 600px) {
+      .container {
+        margin: 10px;
+        padding: 20px 15px;
+      }
+    }
+  </style>
 </head>
 <body>
-  <div class="container fade-in">
-    <h1>Create Your Feedback Link</h1>
-    <input type="text" id="senderName" placeholder="Your name" />
-    <textarea id="customMessage" placeholder="Write a custom message (optional)"></textarea>
-    <button onclick="generateLink()">Generate Link</button>
-    <p id="generatedLink" class="link-output"></p>
+
+<div class="container">
+  <h1 class="animated-text">🎮 Persona Adventure 🎮</h1>
+
+  <div id="senderForm">
+    <h2>Start Your Game</h2>
+    <input type="text" id="senderName" placeholder="Your Name" />
+    <input type="email" id="senderEmail" placeholder="Your Email" />
+    <button onclick="generateLink()">Generate Share Link</button>
   </div>
-  <script src="script.js"></script>
+
+  <div id="linkContainer" class="hidden">
+    <h2>Share this adventure:</h2>
+    <a id="generatedLink" href="#" target="_blank" style="word-break: break-all; color: #60a5fa;"></a>
+  </div>
+
+  <div id="receiverForm" class="hidden">
+    <h2>Enter the Adventure</h2>
+    <input type="text" id="receiverName" placeholder="Your Name" />
+    <input type="email" id="receiverEmail" placeholder="Your Email" />
+    <button onclick="beginGame()">Join Game</button>
+  </div>
+
+  <div id="gameForm" class="hidden">
+    <div class="question-area">
+      <h2 id="questionText"></h2>
+      <div id="answerArea"></div>
+    </div>
+    <button onclick="nextQuestion()">Next ➡️</button>
+  </div>
+
+  <div id="thanksScreen" class="hidden">
+    <h2>🎉 Thanks for playing! 🎉</h2>
+    <div id="answerSummary"></div>
+  </div>
+</div>
+
+<script>
+const urlParams = new URLSearchParams(window.location.search);
+const linkId = urlParams.get("id");
+let sender = {};
+let receiver = {};
+let answers = {};
+const questions = [
+  { key: "trait", text: "🌟 What makes ${sender.name} special?", type: "text" },
+  { key: "vibe", text: "🌈 Choose the vibe ${sender.name} gives off:", type: "select", options: ["Cool 😎", "Sweet 🍭", "Serious 😐", "Mysterious 🕵️‍♂️", "Chill ❄️"] },
+  { key: "truth", text: "🔍 What's one truth about ${sender.name}?", type: "text" },
+  { key: "lie", text: "🤔 Ever caught ${sender.name} lying?", type: "select", options: ["Yes 😅", "Nope 🙅", "Not Sure 🤷"] },
+  { key: "trust", text: "🫶 How much do you trust ${sender.name}?", type: "select", options: ["Completely 💯", "Maybe 🤔", "Not much ❌"] },
+  { key: "shoutout", text: "💌 Send a message or emoji to ${sender.name}!", type: "text" }
+];
+let currentIndex = 0;
+
+if (linkId) {
+  const data = localStorage.getItem("sender-" + linkId);
+  if (data) {
+    sender = JSON.parse(data);
+    document.getElementById("senderForm").classList.add("hidden");
+    document.getElementById("receiverForm").classList.remove("hidden");
+  } else {
+    alert("Invalid or expired link.");
+  }
+}
+
+function generateLink() {
+  const name = document.getElementById("senderName").value;
+  const email = document.getElementById("senderEmail").value;
+  const id = Math.random().toString(36).substring(2, 10);
+  sender = { name, email };
+  localStorage.setItem("sender-" + id, JSON.stringify(sender));
+  const link = window.location.origin + window.location.pathname + "?id=" + id;
+  document.getElementById("generatedLink").href = link;
+  document.getElementById("generatedLink").innerText = link;
+  document.getElementById("linkContainer").classList.remove("hidden");
+}
+
+function beginGame() {
+  receiver.name = document.getElementById("receiverName").value;
+  receiver.email = document.getElementById("receiverEmail").value;
+  document.getElementById("receiverForm").classList.add("hidden");
+  document.getElementById("gameForm").classList.remove("hidden");
+  showQuestion();
+}
+
+function showQuestion() {
+  const q = questions[currentIndex];
+  document.getElementById("questionText").innerText = q.text.replace(/\${sender.name}/g, sender.name);
+  const area = document.getElementById("answerArea");
+  area.innerHTML = "";
+
+  if (q.type === "select") {
+    const select = document.createElement("select");
+    q.options.forEach(opt => {
+      const o = document.createElement("option");
+      o.value = opt;
+      o.innerText = opt;
+      select.appendChild(o);
+    });
+    area.appendChild(select);
+  } else {
+    const input = document.createElement("textarea");
+    input.rows = 3;
+    area.appendChild(input);
+  }
+}
+
+function nextQuestion() {
+  const q = questions[currentIndex];
+  const answerEl = document.querySelector("#answerArea select, #answerArea textarea");
+  answers[q.key] = answerEl.value;
+  currentIndex++;
+  if (currentIndex < questions.length) {
+    showQuestion();
+  } else {
+    endGame();
+  }
+}
+
+function endGame() {
+  const responses = JSON.parse(localStorage.getItem("answers-" + linkId) || "[]");
+  responses.push({ receiver, answers });
+  localStorage.setItem("answers-" + linkId, JSON.stringify(responses));
+
+  document.getElementById("gameForm").classList.add("hidden");
+  document.getElementById("thanksScreen").classList.remove("hidden");
+
+  const out = document.getElementById("answerSummary");
+  out.innerHTML = Object.entries(answers).map(([k, v]) => `<p><strong>${k}:</strong> ${v}</p>`).join("");
+}
+</script>
+
 </body>
 </html>
